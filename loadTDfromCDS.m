@@ -92,9 +92,9 @@ function trial_data = loadTDfromCDS(filename,params)
     
     % trial_data loading parameters...
     if ~isempty(meta)
-        td_params = struct('bin_size',bin_size,'meta',meta);
+        td_params = struct('bin_size',bin_size,'meta',meta,'emg_LPF_cutoff',20);
     else
-        td_params = struct('bin_size',bin_size);
+        td_params = struct('bin_size',bin_size,'emg_LPF_cutoff',20);
     end
     
     %% load it in
