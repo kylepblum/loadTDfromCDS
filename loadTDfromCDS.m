@@ -38,6 +38,7 @@ function trial_data = loadTDfromCDS(filename,params)
     %% default variables
     cont_signal_names = {};
     extract_emg = false;
+    extract_spikes = true;
     event_names = {'startTime','endTime'};
     bin_size = 0.01;
     trial_meta = {};
@@ -53,6 +54,7 @@ function trial_data = loadTDfromCDS(filename,params)
     %% parameter integrity checks
     assert(iscell(cont_signal_names),'cont_signal_names needs to be a cell array')
     assert(islogical(extract_emg),'extract_emg needs to be a bool')
+    assert(islogical(extract_spikes),'extract_spikes needs to be a bool')
     assert(iscell(event_names),'event_names needs to be a cell array')
     assert(isnumeric(bin_size),'bin_size needs to be a number')
     assert(iscell(trial_meta),'trial_meta needs to be a cell')
@@ -81,7 +83,11 @@ function trial_data = loadTDfromCDS(filename,params)
     
     %% Make TD
     cont_signal_labels = get_signal_labels(cont_signal_names);
-    spike_routine = @processCDSspikes;
+    
+    if extract_spikes == true
+        spike_routine = @processCDSspikes;
+    end
+    
     cds_routine = @processCDS;
     
     if extract_emg
@@ -92,22 +98,26 @@ function trial_data = loadTDfromCDS(filename,params)
     
     % trial_data loading parameters...
     if ~isempty(meta)
-        td_params = struct('bin_size',bin_size,'meta',meta,'emg_LPF_cutoff',20);
+        td_params = struct('bin_size',bin_size,'meta',meta,'emg_LPF_cutoff',30);
     else
-        td_params = struct('bin_size',bin_size,'emg_LPF_cutoff',20);
+        td_params = struct('bin_size',bin_size,'emg_LPF_cutoff',30);
     end
     
     %% load it in
     % get signal info
-    signal_info = cell(1,length(array_name)+1);
-    for arraynum = 1:length(array_name)
-        signal_info{arraynum} = initSignalStruct( ...
-            'filename',filename, ...
-            'routine',spike_routine, ...
-            'params',struct('cds_array_name',cds_array_name{arraynum}), ... 
-            'name',array_name{arraynum}, ... % it gets stored under this name... in case of spikes, this gives S1_spikes
-            'type','spikes', ... % which type... see documentation of initSignalStruct
-            'label','');
+    if extract_spikes == true
+        signal_info = cell(1,length(array_name)+1);
+        for arraynum = 1:length(array_name)
+            signal_info{arraynum} = initSignalStruct( ...
+                'filename',filename, ...
+                'routine',spike_routine, ...
+                'params',struct('cds_array_name',cds_array_name{arraynum}), ...
+                'name',array_name{arraynum}, ... % it gets stored under this name... in case of spikes, this gives S1_spikes
+                'type','spikes', ... % which type... see documentation of initSignalStruct
+                'label','');
+        end
+    else 
+        signal_info = cell(1);
     end
     
     signal_info{end} = initSignalStruct( ... % continuous data
